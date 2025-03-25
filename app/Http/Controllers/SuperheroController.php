@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Superhero;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class SuperheroController extends Controller
 {
     public function index()
     {
-        $superheroes = Superhero::all();
+        $superheroes = Superhero::whereNull('deleted_at')->get();
         return view('superheroes.index', compact('superheroes'));
     }
 
@@ -20,25 +22,20 @@ class SuperheroController extends Controller
 
     public function store(Request $request)
     {
-         dd($request->all()); // mostrar datos antes de guardarlkos
-        $validatedData = $request->validate([
+        $data = $request->validate([
             'real_name' => 'required|string|max:255',
             'hero_name' => 'required|string|max:255',
-            'photo_url' => 'required|url',
+            'photo' => 'nullable|image',
             'additional_info' => 'nullable|string',
         ]);
-    
-        /*Superhero::create([
-            'real_name' => $request->real_name,
-            'hero_name' => $request->hero_name,
-            'photo_url' => $request->photo_url,
-            'additional_info' => $request->additional_info,
-        ]); */
-        Superhero::create($validatedData);
-        
-    
-        return redirect()->route('superheroes.index')->with('success', 'Superhéroe creado.');
-        
+
+        if ($request->hasFile('photo')) {
+            $data['photo_url'] = $request->file('photo')->store('superheroes', 'public');
+        }
+
+        Superhero::create($data);
+
+        return redirect()->route('superheroes.index')->with('success', 'Superhéroe creado correctamente.');
     }
 
     public function show(Superhero $superhero)
@@ -53,19 +50,52 @@ class SuperheroController extends Controller
 
     public function update(Request $request, Superhero $superhero)
     {
-        $superhero->update($request->validate([
+        $data = $request->validate([
             'real_name' => 'required|string|max:255',
             'hero_name' => 'required|string|max:255',
-            'photo_url' => 'required|url',
+            'photo' => 'nullable|image',
             'additional_info' => 'nullable|string',
-        ]));
+        ]);
 
-        return redirect()->route('superheroes.index')->with('success', 'Superhéroe actualizado.');
+        if ($request->hasFile('photo')) {
+            $data['photo_url'] = $request->file('photo')->store('superheroes', 'public');
+        }
+
+        $superhero->update($data);
+
+        return redirect()->route('superheroes.index')->with('success', 'Superhéroe actualizado correctamente.');
     }
 
     public function destroy(Superhero $superhero)
     {
         $superhero->delete();
-        return redirect()->route('superheroes.index')->with('success', 'Superhéroe eliminado.');
+        return redirect()->route('superheroes.index')->with('success', 'Superhéroe eliminado (borrado lógico).');
+    }
+
+    // 👇 MÉTODOS PARA GESTIONAR REGISTROS ELIMINADOS
+
+    public function trash()
+    {
+       // $superheroes = Superhero::all();
+        //return view('superheroes.create');
+        //return view('superheroes.trash');
+        $superheroes = Superhero::onlyTrashed()->get();
+        return view('superheroes.trash', compact('superheroes'));
+    }
+
+    public function restore($id)
+    {
+        $superhero = Superhero::onlyTrashed()->findOrFail($id);
+        $superhero->restore();
+
+        return redirect()->route('superheroes.index')->with('success', 'Superhéroe restaurado.');
+    }
+
+    public function forceDelete($id)
+    {
+        $superhero = Superhero::onlyTrashed()->findOrFail($id);
+        $superhero->forceDelete();
+
+        return redirect()->route('superheroes.trash')->with('success', 'Superhéroe eliminado permanentemente.');
     }
 }

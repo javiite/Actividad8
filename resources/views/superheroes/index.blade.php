@@ -1,10 +1,24 @@
+
+
 @extends('layouts.app')
 
 @section('content')
 <div class="container">
     <h1>Lista de Superhéroes</h1>
-    <a href="{{ route('superheroes.create') }}" class="btn btn-primary">Agregar Superhéroe</a>
-    <table class="table mt-4">
+    <a href="{{ route('superheroes.create') }}" class="btn btn-primary mb-3">AGREGAR SUPERHEROE</a>
+    
+    <a href="{{ route('superheroes.trash') }}" class="btn btn-primary mb-3">
+        VER ELIMINADOS
+    </a>
+
+    
+
+
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+
+    <table class="table table-bordered">
         <thead>
             <tr>
                 <th>Nombre Real</th>
@@ -14,21 +28,23 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($superheroes as $hero)
-            <tr>
-                <td>{{ $hero->real_name }}</td>
-                <td>{{ $hero->hero_name }}</td>
-                <td><img src="{{ $hero->photo_url }}" alt="{{ $hero->hero_name }}" width="100"></td>
-                <td>
-                    <a href="{{ route('superheroes.show', $hero->id) }}" class="btn btn-info">Ver</a>
-                    <a href="{{ route('superheroes.edit', $hero->id) }}" class="btn btn-warning">Editar</a>
-                    <form action="{{ route('superheroes.destroy', $hero->id) }}" method="POST" class="d-inline">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-danger" onclick="return confirm('¿Seguro que quieres eliminarlo?')">Eliminar</button>
-                    </form>
-                </td>
-            </tr>
+            @foreach($superheroes as $superhero)
+                <tr>
+                    <td>{{ $superhero->real_name }}</td>
+                    <td>{{ $superhero->hero_name }}</td>
+                    <td>
+                        <img src="{{ asset('storage/' . $superhero->photo) }}" width="80" height="80">
+                    </td>
+                    <td>
+                        <a href="{{ route('superheroes.show', $superhero) }}" class="btn btn-info btn-sm">Ver</a>
+                        <a href="{{ route('superheroes.edit', $superhero) }}" class="btn btn-warning btn-sm">Editar</a>
+                        <form action="{{ route('superheroes.destroy', $superhero) }}" method="POST" style="display:inline;">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btn btn-danger btn-sm">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
             @endforeach
         </tbody>
     </table>
